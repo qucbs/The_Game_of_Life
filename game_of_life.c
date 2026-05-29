@@ -1,10 +1,16 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <time.h>
+
 #define ROWS 50
 #define COLUMNS 70
 
 int current[ROWS][COLUMNS];
 int next[ROWS][COLUMNS];
+bool paused = true;
+int cell_size = 20;
+
 
 int main()
 {
@@ -13,6 +19,8 @@ int main()
         printf("SDL Init Error: %s\n", SDL_GetError());
         return 1;
     }
+
+
 
     SDL_Window* window = SDL_CreateWindow(
         "Game of Life",
@@ -36,15 +44,54 @@ int main()
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND); // blend mode for transparent colors
     int running = 1;
-    current[10][10] = 1;
-    current[10][11] = 1;
-    current[10][12] = 1;
+
+
+
     while (running) {
         SDL_Event event;
 
         while(SDL_PollEvent(&event)) {
+
             if (event.type == SDL_QUIT) {
                 running = 0;
+            }
+
+            // Checking for a pause (space)
+            if (event.type == SDL_KEYDOWN) {
+                if (event.key.keysym.sym == SDLK_SPACE) {
+                    paused = !paused;
+                }
+                if (event.key.keysym.sym == SDLK_c) {
+                    for (int i = 0; i < ROWS; i++) {
+                        for (int j = 0; j < COLUMNS; j++) {
+                            current[i][j] = 0;
+                        }
+                    }
+                }
+                if (event.key.keysym.sym == SDLK_r) {
+                    srand(time(NULL));
+                    for (int row = 0; row < ROWS; row++) {
+                        for (int col = 0; col < COLUMNS; col++) {
+                            int random_num = (rand() % 10);
+
+                            if (random_num == 4) {
+                                current[row][col] = 1;
+                            }
+                        }
+                    }
+
+
+                    
+                }
+            }
+            if (event.type == SDL_MOUSEBUTTONDOWN) {
+                int mouse_x = event.button.x;
+                int mouse_y = event.button.y;
+
+                int col = mouse_x / cell_size;
+                int row = mouse_y / cell_size;
+            
+                current[row][col] = !current[row][col];
             }
         }
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Only sets the current drawing color to black
@@ -52,7 +99,6 @@ int main()
 
         
 
-        int cell_size = 20;
         
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLUMNS; col++) {
@@ -82,39 +128,41 @@ int main()
             }
         }
 
-        for (int row = 0; row <= ROWS; row++) {
-            for (int col = 0; col <= COLUMNS; col++) {
+        if (!paused) {
+            for (int row = 0; row <= ROWS; row++) {
+                for (int col = 0; col <= COLUMNS; col++) {
 
-                int alive = 0;
-                for (int i = -1; i < 2; i++) {
-                    for (int j = -1; j < 2; j++) {
-                        if (i == 0 && j == 0) {
-                            continue;
-                        }
-                        if (current[row + i][col + j] == 1) {
-                            alive++;
+                    int alive = 0;
+                    for (int i = -1; i < 2; i++) {
+                        for (int j = -1; j < 2; j++) {
+                            if (i == 0 && j == 0) {
+                                continue;
+                            }
+                            if (current[row + i][col + j] == 1) {
+                                alive++;
+                            }
                         }
                     }
-                }
 
-                if (current[row][col] == 1) {
-                    if (alive < 2 || alive > 3) {
-                        next[row][col] = 0;
+                    if (current[row][col] == 1) {
+                        if (alive < 2 || alive > 3) {
+                            next[row][col] = 0;
+                        }
+                        else next[row][col] = 1;
                     }
-                    else next[row][col] = 1;
-                }
-                else {
-                    if (alive == 3) {
-                        next[row][col] = 1;
+                    else {
+                        if (alive == 3) {
+                            next[row][col] = 1;
+                        }
+                        else next[row][col] = 0;
                     }
-                    else next[row][col] = 0;
                 }
             }
-        }
 
-        for (int row = 0; row < ROWS; row++) {
-            for (int col = 0; col < COLUMNS; col++) {
-                current[row][col] = next[row][col]  ;
+            for (int row = 0; row < ROWS; row++) {
+                for (int col = 0; col < COLUMNS; col++) {
+                    current[row][col] = next[row][col]  ;
+                }
             }
         }
 
